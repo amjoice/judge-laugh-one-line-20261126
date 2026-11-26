@@ -5,28 +5,38 @@ confession to a therapist that gets billed as a no-show. Pure
 stdlib, fully deterministic, no network or randomness involved.
 """
 
-import os
+from pathlib import Path
 
-_PARTS = (
-    "I told my therapist I felt invisible. ",
-    "She charged me for a no-show.",
-)
-LINE = "".join(_PARTS)
-OUTPUT_PATH = "/output/entry.txt"
+_SETUP = "I told my therapist I felt invisible."
+_PUNCHLINE = "She charged me for a no-show."
+_TARGET = Path("/output/entry.txt")
+_MAX_CHARS = 200
 
 
-def _validate(text: str) -> None:
-    if not (1 <= len(text) <= 200):
-        raise ValueError(f"entry length {len(text)} outside gate 1-200")
-    if not text.strip():
-        raise ValueError("entry is only white space")
+def _build_line() -> str:
+    """Assemble the entry line from its two beats."""
+    return f"{_SETUP} {_PUNCHLINE}"
+
+
+def _check(text: str) -> str:
+    """Return text unchanged when it satisfies the entry gate."""
+    stripped = text.strip()
+    if not stripped:
+        raise ValueError("entry must not be blank")
+    if len(text) > _MAX_CHARS:
+        raise ValueError(f"entry length {len(text)} exceeds {_MAX_CHARS}")
+    return text
+
+
+def _emit(text: str, destination: Path) -> None:
+    """Write text to destination, creating parent directories first."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(text, encoding="utf-8")
 
 
 def main() -> None:
-    _validate(LINE)
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as fh:
-        fh.write(LINE)
+    line = _check(_build_line())
+    _emit(line, _TARGET)
 
 
 if __name__ == "__main__":
